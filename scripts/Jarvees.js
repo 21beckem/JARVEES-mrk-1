@@ -6,7 +6,16 @@ class AI_CONFIG_TEMPLATE {
         temperature: 0,
         thinkingConfig: { thinkingBudget: 0 },
         tools: [],
-        systemInstruction: [{ text: `Your name is Jarvees. Call me sir.` }]
+        systemInstruction: [{ text: `
+Things to know but never say:
+- Try to keep responses to less than 30 words.
+- Use british language and spelling. Never use slang.
+
+Things to know about yourself:
+- Your name is Jarvees.
+- Call me sir every now and then.
+- You are an AI assistant created and trained by Mr. Becker.
+` }]
     };
     contents = [];
     constructor() {
@@ -23,15 +32,24 @@ class AI_CONFIG_TEMPLATE {
     }
     async parseResponse(stepper) {
         let responseTxt = '';
-        for await (const chunk of stepper) {
-            if (chunk.functionCalls)
-                this.config.tools[0].functionDeclarations
-                    .find(f => f.name === chunk.functionCalls[0].name)
-                    ?.function(chunk.functionCalls[0].args);
-            else
-                responseTxt += chunk.text;
+        try {
+            for await (const chunk of stepper) {
+                if (chunk.functionCalls) {
+                    let thisFunction = this.config.tools[0].functionDeclarations
+                        .find(f => f.name === chunk.functionCalls[0].name)
+                    if (!thisFunction) continue;
+                    let funcResponse = await thisFunction.function(chunk.functionCalls[0].args);
+                    responseTxt += (funcResponse && typeof funcResponse === 'string') ? funcResponse : 'Of course sir.';
+                }
+                else
+                    responseTxt += chunk.text;
+                responseTxt += ' ';
+            }
         }
-        return responseTxt;
+        catch (error) {
+            responseTxt = `I'm sorry, but I'm facing an error. I'll send the details to Mr. Becker for further investigation.`;
+        }
+        return responseTxt.trim();
     }
 }
 const Config = new AI_CONFIG_TEMPLATE();
@@ -40,9 +58,6 @@ const Config = new AI_CONFIG_TEMPLATE();
 // import extensions
 import smart_home_device from '../extensions/smart_home/index.js';
 Config.importExtension(smart_home_device);
-
-import follow_up_question from '../extensions/follow_up_question/index.js';
-Config.importExtension(follow_up_question);
 
 
 
@@ -68,9 +83,10 @@ class JARVEES_TEMPLATE {
     }
 
     // session
-    beginSession() {
+    beginSession(startWithHisHello=true) {
         this.session = [];
-        this.sayToUser('Hello sir. How can I help you?');
+        if (startWithHisHello)
+            this.#sayToUser('Hello sir. How can I help you?');
     }
     dontKillSession() {
         clearTimeout(this.sessionTimeout);
@@ -83,12 +99,12 @@ class JARVEES_TEMPLATE {
     }
 
     // conversation
-    sayToUser(text, killNow=false) {
+    #sayToUser(text, killNow=false) {
         this.session.push({
             role: 'model',
             parts: [{ text: text }]
         });
-        console.log('Jarvees says:', text);
+        // console.log('Jarvees says:', text);
 
         if (killNow)
             return this.killSessionIn(0);
@@ -100,8 +116,13 @@ class JARVEES_TEMPLATE {
             // if no follow up questions, clear the session in a bit
             this.killSessionIn(5);
         }
+        return text;
     }
     async sayToHim(prompt) {
+        // if the session is empty, start a new one
+        if (this.session.length === 0)
+            this.beginSession(false); // don't start with his hello message since we're already saying something
+
         this.dontKillSession();
         this.session.push({
             role: 'user',
@@ -111,7 +132,7 @@ class JARVEES_TEMPLATE {
         const response = await this.ai.models.generateContentStream( Config );
         let output = await Config.parseResponse(response);
         if (output)
-            this.sayToUser(output.trim());
+            return this.#sayToUser(output.trim());
         else
             this.killSessionIn(0);
     }
