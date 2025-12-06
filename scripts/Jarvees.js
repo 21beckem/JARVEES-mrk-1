@@ -59,7 +59,8 @@ const Config = new AI_CONFIG_TEMPLATE();
 import smart_home_device from '../extensions/smart_home/index.js';
 Config.importExtension(smart_home_device);
 
-
+import browser_agent from '../extensions/browser_agent/index.js';
+Config.importExtension(browser_agent);
 
 
 
