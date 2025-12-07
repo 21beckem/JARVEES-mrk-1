@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '../cdn/genai.js';
 
 class AI_CONFIG_TEMPLATE {
-    model = 'gemini-2.5-flash-lite';
+    model = 'gemini-2.0-flash-lite';
     config = {
         temperature: 0,
         thinkingConfig: { thinkingBudget: 0 },

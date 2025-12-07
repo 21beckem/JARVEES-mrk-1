@@ -52,7 +52,7 @@ def prepareBrowserAndAgent(promptStr):
 
     agent = Agent(
         task = promptStr,
-        llm = ChatGoogle(model='gemini-flash-lite-latest'),
+        llm = ChatGoogle(model='gemini-2.5-flash-lite'),
         browser = browser
     )
     return agent
