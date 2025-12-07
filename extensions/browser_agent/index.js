@@ -1,4 +1,3 @@
-import { Type } from '../../cdn/genai.js';
 import Extension from '../Extension.js';
 
 // cd extensions\browser_agent\browseruse && .venv\Scripts\activate && uv run server.py
@@ -16,18 +15,21 @@ async function promptAgent(prompt) {
 
 const my_extension = new Extension([
     {
-        name: 'launch_browser_agent',
-        description: 'an agent that can control your browser and complete tasks for you. prompt is the message for the task that needs to be completed. prompt must be a detailed list of what the agent needs to open, click on, copy, paste, and/or type.',
-        parameters: {
-            type: Type.OBJECT,
-            required: ['prompt'],
-            properties: {
-                prompt: {
-                    type: Type.STRING,
+        type: 'function',
+        function: {
+            name: 'launch_browser_agent',
+            description: 'an agent that can control your browser and complete tasks for you. prompt is the message for the task that needs to be completed. prompt must be a detailed list of what the agent needs to open, click on, copy, paste, and/or type.',
+            parameters: {
+                type: 'object',
+                required: ['prompt'],
+                properties: {
+                    prompt: {
+                        type: 'string',
+                    }
                 }
             }
         },
-        function: (args) => {
+        method: (args) => {
             const { prompt } = args;
             promptAgent(prompt);
             return `Of course sir. I'll notify you with the results.`;

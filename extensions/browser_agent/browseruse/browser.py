@@ -1,4 +1,4 @@
-from browser_use import Agent, Browser, ChatGoogle
+from browser_use import Agent, Browser, ChatGoogle, ChatOllama
 import asyncio
 
 
@@ -52,7 +52,8 @@ def prepareBrowserAndAgent(promptStr):
 
     agent = Agent(
         task = promptStr,
-        llm = ChatGoogle(model='gemini-2.5-flash-lite'),
+        # llm = ChatGoogle(model='gemini-2.5-flash-lite'),
+        llm = ChatOllama(model='qwen3-vl:235b-cloud'),
         browser = browser
     )
     return agent

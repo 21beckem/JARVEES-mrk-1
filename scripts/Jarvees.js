@@ -1,55 +1,42 @@
-import { GoogleGenAI } from '../cdn/genai.js';
+import ollama from 'ollama';
 
 class AI_CONFIG_TEMPLATE {
-    model = 'gemini-2.0-flash-lite';
+    model = 'gpt-oss:20b-cloud';
+    stream = false;
+    think = false;
     config = {
         temperature: 0,
-        thinkingConfig: { thinkingBudget: 0 },
-        tools: [],
-        systemInstruction: [{ text: `
-Things to know but never say:
-- Try to keep responses to less than 30 words.
-- Use british language and spelling. Never use slang.
-
-Things to know about yourself:
-- Your name is Jarvees.
-- Call me sir every now and then.
-- You are an AI assistant created and trained by Mr. Becker.
-` }]
+        thinkingConfig: { thinkingBudget: 0 }
     };
-    contents = [];
-    constructor() {
-        this.config.tools.push({
-            functionDeclarations: []
-        });
-    }
+    tools = [];
+    messages = [];
+    constructor() {}
     importExtension(extension) {
-        this.config.tools[0].functionDeclarations.push(...(extension.functions));
+        this.tools.push(...(extension.functions));
         return this;
     }
-    setSession(contents) {
-        this.contents = contents;
+    setSession(messages) {
+        this.messages = messages;
     }
-    async parseResponse(stepper) {
-        let responseTxt = '';
+    async parseResponse(response) {
+        let errorText = `I'm sorry, but I'm facing an error. I'll send the details to Mr. Becker for further investigation.`;
         try {
-            for await (const chunk of stepper) {
-                if (chunk.functionCalls) {
-                    let thisFunction = this.config.tools[0].functionDeclarations
-                        .find(f => f.name === chunk.functionCalls[0].name)
-                    if (!thisFunction) continue;
-                    let funcResponse = await thisFunction.function(chunk.functionCalls[0].args);
-                    responseTxt += (funcResponse && typeof funcResponse === 'string') ? funcResponse : 'Of course sir.';
-                }
-                else
-                    responseTxt += chunk.text;
-                responseTxt += ' ';
+            if (!response.done) return errorText;
+            if (!response.message) return errorText;
+
+            if (response.message.tool_calls) {
+                let thisFunction = this.tools.find(f => f.function.name === response.message.tool_calls[0].function.name);
+                if (!thisFunction) return errorText + ' Function not found.';
+                let funcResponse = await thisFunction.method(response.message.tool_calls[0].function.arguments);
+                return (funcResponse && typeof funcResponse === 'string') ? funcResponse : 'Of course sir.';
+            } else {
+                return response.message.content;
             }
         }
         catch (error) {
-            responseTxt = `I'm sorry, but I'm facing an error. I'll send the details to Mr. Becker for further investigation.`;
+            debugger;
+            return errorText;
         }
-        return responseTxt.trim();
     }
 }
 const Config = new AI_CONFIG_TEMPLATE();
@@ -74,18 +61,37 @@ Config.importExtension(browser_agent);
 class JARVEES_TEMPLATE {
     // initialize
     constructor() {
-        this.session = [];
+        this.beginSession(false);
         this.sessionTimeout = null;
     }
     authenticate() {
-        this.ai = new GoogleGenAI({
-            apiKey: process.env.GOOGLE_API_KEY
-        });
+        this.ai = {
+            generate: async function(config) {
+                let res = await ollama.chat(
+                    JSON.parse(JSON.stringify(config))
+                );
+                return res;
+            }
+        }
     }
 
     // session
     beginSession(startWithHisHello=true) {
-        this.session = [];
+        this.session = [{
+            role: 'system',
+            content: `
+DO NOT FORGET TO GIVE ME THE FUNCTION NAME WHEN CALLING A TOOL!
+
+Things to know but never say:
+- Try to keep responses to less than 30 words.
+- Use british language and spelling. Never use slang.
+
+Things to know about yourself:
+- Your name is Jarvees.
+- Call me sir every now and then.
+- You are an AI assistant created and trained by Mr. Becker.
+`
+        }];
         if (startWithHisHello)
             this.#sayToUser('Hello sir. How can I help you?');
     }
@@ -102,8 +108,8 @@ class JARVEES_TEMPLATE {
     // conversation
     #sayToUser(text, killNow=false) {
         this.session.push({
-            role: 'model',
-            parts: [{ text: text }]
+            role: 'assistant',
+            content: text
         });
         // console.log('Jarvees says:', text);
 
@@ -127,10 +133,10 @@ class JARVEES_TEMPLATE {
         this.dontKillSession();
         this.session.push({
             role: 'user',
-            parts: [{ text: prompt }]
+            content: prompt
         });
         Config.setSession(this.session);
-        const response = await this.ai.models.generateContentStream( Config );
+        const response = await this.ai.generate( Config );
         let output = await Config.parseResponse(response);
         if (output)
             return this.#sayToUser(output.trim());

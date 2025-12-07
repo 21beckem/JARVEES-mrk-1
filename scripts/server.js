@@ -6,10 +6,15 @@ Jarvees.authenticate();
 
 server.get('/jarvees', async (req, res) => {
     if (!req.query.msg) return res.status(400).send('No message provided.');
-    const { msg = null } = req.query;
+    const { msg = null, neat = null } = req.query;
     if (!msg) return res.status(400).send('No message provided.');
     
-    res.send( await Jarvees.sayToHim(msg) );
+
+    let output = await Jarvees.sayToHim(msg);
+    if (!neat)
+        return res.send(output);
+    else
+        return res.send('<br><br><br><h1>'+output+'</h1>');
 });
 
 export default server;
