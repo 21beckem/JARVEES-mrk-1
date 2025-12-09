@@ -31,7 +31,7 @@ async def test():
     agent = prepareBrowserAndAgent(''' Follow these instructions:
     1. open drive.google.com/drive/u/3/my-drive
     2. create a new document
-    3. name it "Jarvees!"
+    3. name it "Genesis!"
     4. on the main document itself, type "hello world"
 ''')
     history = await agent.run()

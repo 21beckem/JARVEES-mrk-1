@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Jarvees Browser Agent'
+    return 'Genesis Browser Agent'
 
 
 @app.route('/run_agent', methods=['POST'])

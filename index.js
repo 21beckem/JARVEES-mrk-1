@@ -1,19 +1,19 @@
 import * as utils from './scripts/utils.js';
-import Jarvees from './scripts/Jarvees.js';
+import Genesis from './scripts/Genesis.js';
 import server from './scripts/server.js';
 
 utils.verifiyENV();
 
-const port = process.env.JARVEES_PORT || 3000;
+const port = process.env.GENESIS_PORT || 3000;
 server.listen(port, () => {
-    console.log(`Jarvees is listening on port ${port}`);
+    console.log(`Genesis is listening on port ${port}`);
 });
 
 
 // (async () => {
 
-// Jarvees.beginSession();
-// await Jarvees.sayToHim('turn on the bedroom light, please.');
+// Genesis.beginSession();
+// await Genesis.sayToHim('turn on the bedroom light, please.');
 
 // await ha.getAllEntityIDs();
 

@@ -58,7 +58,7 @@ Config.importExtension(browser_agent);
 
 
 
-class JARVEES_TEMPLATE {
+class GENESIS_TEMPLATE {
     // initialize
     constructor() {
         this.beginSession(false);
@@ -87,7 +87,7 @@ Things to know but never say:
 - Use british language and spelling. Never use slang.
 
 Things to know about yourself:
-- Your name is Jarvees.
+- Your name is Genesis.
 - Call me sir every now and then.
 - You are an AI assistant created and trained by Mr. Becker.
 `
@@ -111,7 +111,7 @@ Things to know about yourself:
             role: 'assistant',
             content: text
         });
-        // console.log('Jarvees says:', text);
+        // console.log('Genesis says:', text);
 
         if (killNow)
             return this.killSessionIn(0);
@@ -145,6 +145,6 @@ Things to know about yourself:
     }
 }
 
-const Jarvees = new JARVEES_TEMPLATE();
+const Genesis = new GENESIS_TEMPLATE();
 
-export default Jarvees;
+export default Genesis;

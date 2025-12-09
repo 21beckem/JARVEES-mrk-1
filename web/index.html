@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENESIS Listener</title>
+</head>
+<body>
+    <textarea></textarea>
+    <script>
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SpeechRecognitionEvent = window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
+const synth = window.speechSynthesis;
+
+const recognition = new SpeechRecognition();
+recognition.continuous = true;
+recognition.processLocally = false;
+recognition.lang = 'en';
+recognition.interimResults = true;
+recognition.maxAlternatives = 1;
+
+recognition.start();
+recognition.onend = function (event) {
+    recognition.start();
+};
+
+recognition.onerror = function (event) {
+    if (event.error === 'no-speech') return;
+    console.error('Error occurred in recognition: ', event.error);
+};
+
+recognition.onresult = async function (event) {
+    document.querySelector('textarea').value = '';
+    const text = event.results[event.results.length-1][0].transcript;
+    if (!event.results[event.results.length-1].isFinal) return;
+    if (!text.toLowerCase().includes('genesis')) return;
+
+    console.log('GENESIS!');
+    let res = await fetch('/genesis?msg='+encodeURIComponent(text));
+    const toSay = await res.text();
+    document.querySelector('textarea').value = toSay;
+
+    recognition.stop();
+
+    let utterThis = new SpeechSynthesisUtterance(toSay);
+    utterThis.voice = window.speechSynthesis.getVoices().find(v => v.voiceURI == 'Google UK English Male' || v.voiceURI == 'Microsoft Ryan Online (Natural) - English (United Kingdom)');
+    utterThis.rate = 1.1;
+    utterThis.pitch = 1;
+    synth.speak(utterThis);
+    utterThis.onend = function (event) {
+        try { recognition.start(); } catch (e) {}
+    };
+};
+    </script>
+</body>
+</html>
